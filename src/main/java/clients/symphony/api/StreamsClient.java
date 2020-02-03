@@ -294,8 +294,14 @@ public class StreamsClient extends APIClient {
         }
     }
 
-    public List<StreamListItem> getUserStreams(List<String> streamTypes, boolean includeInactiveStreams)
-        throws SymClientException {
+    public List<StreamListItem> getUserStreams(
+            List<String> streamTypes, boolean includeInactiveStreams) throws SymClientException {
+        return getUserStreams(streamTypes, includeInactiveStreams, 0, 50);
+    }
+
+    public List<StreamListItem> getUserStreams(
+            List<String> streamTypes, boolean includeInactiveStreams, int skip, int limit)
+            throws SymClientException {
         List<Map> inputStreamTypes = new ArrayList<>();
         if (streamTypes != null) {
             for (String type : streamTypes) {
@@ -308,13 +314,17 @@ public class StreamsClient extends APIClient {
         input.put("streamTypes", inputStreamTypes);
         input.put("includeInactiveStreams", includeInactiveStreams);
 
-        Invocation.Builder builder = botClient.getPodClient()
-            .target(botClient.getConfig().getPodUrl())
-            .path(PodConstants.LISTUSERSTREAMS)
-            .request(MediaType.APPLICATION_JSON)
-            .header("sessionToken", botClient.getSymAuth().getSessionToken());
+        try (Response response =
+                     botClient
+                             .getPodClient()
+                             .target(botClient.getConfig().getPodUrl())
+                             .path(PodConstants.LISTUSERSTREAMS)
+                             .queryParam("skip", skip)
+                             .queryParam("limit", limit)
+                             .request(MediaType.APPLICATION_JSON)
+                             .header("sessionToken", botClient.getSymAuth().getSessionToken())
+                             .post(Entity.entity(input, MediaType.APPLICATION_JSON))) {
 
-        try (Response response = builder.post(Entity.entity(input, MediaType.APPLICATION_JSON))) {
             if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
                 try {
                     handleError(response, botClient);
@@ -323,6 +333,7 @@ public class StreamsClient extends APIClient {
                 }
                 return null;
             }
+
             return response.readEntity(StreamInfoList.class);
         }
     }

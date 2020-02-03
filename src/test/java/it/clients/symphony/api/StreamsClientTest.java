@@ -458,7 +458,7 @@ public class StreamsClientTest extends BotTest {
 
   @Test
   public void getUserStreamsSuccess() {
-    stubFor(post(urlEqualTo(PodConstants.LISTUSERSTREAMS))
+    stubFor(post(urlEqualTo(PodConstants.LISTUSERSTREAMS + "?skip=0&limit=50"))
         .withHeader(HttpHeaders.ACCEPT, equalTo(MediaType.APPLICATION_JSON))
         .willReturn(aResponse()
             .withStatus(200)
